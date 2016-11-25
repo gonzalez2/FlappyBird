@@ -10,11 +10,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var bg = SKSpriteNode()
     let birdGroup:UInt32 = 1
     let objectGroup:UInt32 = 2
+    var died = Bool()
     var gameOver = 0
     var movingObjects = SKNode()
+    var restartBUTTON = SKSpriteNode()
+    var timer: NSTimer?
     
     override func didMoveToView(view: SKView)
     {
+        createScene()
+    }
+    
+    func createScene(){
         //Begining BackGround Texture
         self.physicsWorld.contactDelegate = self
         self.physicsWorld.gravity = CGVectorMake(0, -5) // creates the gravity note: higher y number the faster bird falls
@@ -67,8 +74,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.addChild(ground)
         
         //calls the func makePipes every 3 seconds
-        var timer = NSTimer.scheduledTimerWithTimeInterval(3, target: self, selector: Selector("makePipes"), userInfo: nil, repeats: true)
+        timer = NSTimer.scheduledTimerWithTimeInterval(3, target: self, selector: #selector(GameScene.makePipes), userInfo: nil, repeats: true)
+        bird.speed = 1
+        movingObjects.speed = 1
         
+        
+    }
+    
+    func restartScene(){
+        timer!.invalidate()
+        timer = nil
+        movingObjects.removeAllChildren()
+        movingObjects.removeAllActions()
+        self.removeAllChildren()
+        self.removeAllActions()
+        died = false
+        //score = 0
+        gameOver = 0
+        createScene()
         
     }
     
@@ -96,6 +119,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         pipe1.physicsBody?.dynamic = false
         pipe1.zPosition = 5
         pipe1.physicsBody?.categoryBitMask = objectGroup
+        pipe1.removeFromParent()
         movingObjects.addChild(pipe1)//adds everything about pipe1 to the scene
         
         let pipe2Texture = SKTexture(imageNamed:"imges/pipe2.png")
@@ -106,22 +130,56 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         pipe2.physicsBody?.dynamic = false
         pipe2.zPosition = 5
         pipe2.physicsBody?.categoryBitMask = objectGroup
+        pipe2.removeFromParent()
         movingObjects.addChild(pipe2)
         }
     }
     
+    func createBTN(){
+        
+        restartBUTTON = SKSpriteNode(imageNamed: "imges/RestartBtn.png")
+        restartBUTTON.size = CGSizeMake(200, 100)
+        restartBUTTON.position = CGPoint(x: self.frame.width / 2, y: self.frame.height / 2)
+        restartBUTTON.zPosition = 6
+        restartBUTTON.setScale(0)
+        self.addChild(restartBUTTON)
+        restartBUTTON.runAction(SKAction.scaleTo(1.0, duration: 0.3))
+        
+    }
+    
     func didBeginContact(contact: SKPhysicsContact) {
         print("Hit")
-        gameOver = 0
+        gameOver = 1
         //movingObjects.speed = 0
+        if(movingObjects.speed > 0 ) {
+            movingObjects.speed = 0;
+            bird.speed = 0;
+            // Flash background if contact is detected
+  
+        }
+
+        if(died == false){
+            died = true
+            createBTN()
+        }
     }
     
     override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?)
     {
-        if(gameOver == 0){
-            
+        if(movingObjects.speed > 0){
            bird.physicsBody?.velocity = CGVectorMake(0, 0)
            bird.physicsBody?.applyImpulse(CGVectorMake(0, 50))
+        }
+        
+        
+        for touch in touches{
+            let location = touch.locationInNode(self)
+            
+            if died == true{
+                if restartBUTTON.containsPoint(location){
+                    restartScene()
+                }
+            }
         }
 
     }

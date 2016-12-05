@@ -10,12 +10,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var bg = SKSpriteNode()
     let birdGroup:UInt32 = 1
     let objectGroup:UInt32 = 2
+    let scoreGroup:UInt32 = 3
     var died = Bool()
     var gameOver = 0
     var movingObjects = SKNode()
     var restartBUTTON = SKSpriteNode()
     var timer: NSTimer?
-    
+    var scoreTimer: NSTimer?
+    var scoreLabel = SKLabelNode()
+    var score = NSInteger()
     override func didMoveToView(view: SKView)
     {
         createScene()
@@ -78,9 +81,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bird.speed = 1
         movingObjects.speed = 1
         
-        
+        score = 0;
+        scoreLabel.position = CGPoint(x: self.frame.width / 2, y: self.frame.height / 2 + self.frame.height / 8.5)
+        scoreLabel.text = "\(score)"
+        scoreLabel.fontName = "Helvetica"
+        scoreLabel.zPosition = 11
+        scoreLabel.fontSize = 60
+        self.addChild(scoreLabel)
+
+        scoreTimer = NSTimer.scheduledTimerWithTimeInterval(0.25, target: self, selector: #selector(GameScene.scoreUpdate), userInfo: nil, repeats: true)
     }
     
+    func scoreUpdate(){
+        self.score++
+        self.scoreLabel.text = "\(self.score)"
+    }
     func restartScene(){
         timer!.invalidate()
         timer = nil
@@ -89,7 +104,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.removeAllChildren()
         self.removeAllActions()
         died = false
-        //score = 0
+        score = 0
         gameOver = 0
         createScene()
         
@@ -150,15 +165,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func didBeginContact(contact: SKPhysicsContact) {
         print("Hit")
         gameOver = 1
-        //movingObjects.speed = 0
-        if(movingObjects.speed > 0 ) {
-            movingObjects.speed = 0;
-            bird.speed = 0;
-            // Flash background if contact is detected
-  
-        }
 
+        if(movingObjects.speed > 0 ) {
+                movingObjects.speed = 0;
+                bird.speed = 0;
+        }
         if(died == false){
+            scoreTimer!.invalidate()
+            scoreTimer = nil
             died = true
             createBTN()
         }
